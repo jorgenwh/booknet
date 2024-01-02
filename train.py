@@ -1,6 +1,8 @@
 import torch
 
 from mlp import MLP
+from rnn import RNN
+from lstm import LSTM
 from helpers import read_text, preprocess_text, AverageMeter
 
 
@@ -10,7 +12,7 @@ assert data.dtype == torch.int64
 
 BATCH_SIZE = 64
 LEARNING_RATE = 0.001
-EPOCHS = 20
+EPOCHS = 100
 EMBD_DIM = 32
 SEQ_LEN = 64
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -30,7 +32,21 @@ def get_batch():
     return X, y
 
 
-model = MLP(vocab_size, EMBD_DIM, SEQ_LEN)
+#model = MLP(
+#        vocab_size, 
+#        EMBD_DIM, 
+#        SEQ_LEN
+#)
+#model = RNN(
+#        vocab_size, 
+        #EMBD_DIM, 
+        #SEQ_LEN
+#)
+model = LSTM(
+        vocab_size, 
+        EMBD_DIM, 
+        SEQ_LEN
+)
 model = model.to(DEVICE)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
