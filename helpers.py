@@ -11,8 +11,31 @@ def preprocess_text(text):
     char_to_index = {char: index for index, char in enumerate(vocab)}
     index_to_char = {index: char for index, char in enumerate(vocab)}
     data = torch.tensor([char_to_index[char] for char in text])
-
     return data, vocab_size, char_to_index, index_to_char
+
+
+class AverageMeter():
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val*n
+        self.count += n
+        self.avg = self.sum/self.count
+
+    def __repr__(self):
+        return f"{round(self.avg, 4)}"
+
+    def __str__(self):
+        return repr(self)
+
 
 if __name__ == "__main__":
     text = read_data()
