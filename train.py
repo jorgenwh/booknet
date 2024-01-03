@@ -11,10 +11,11 @@ assert data.dtype == torch.int64
 
 
 BATCH_SIZE = 64
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001
+START_EPOCH = 9
 EPOCHS = 100
 EMBD_DIM = 32
-SEQ_LEN = 64
+SEQ_LEN = 128
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -32,21 +33,13 @@ def get_batch():
     return X, y
 
 
-#model = MLP(
-#        vocab_size, 
-#        EMBD_DIM, 
-#        SEQ_LEN
-#)
-#model = RNN(
-#        vocab_size, 
-        #EMBD_DIM, 
-        #SEQ_LEN
-#)
 model = LSTM(
         vocab_size, 
         EMBD_DIM, 
         SEQ_LEN
 )
+
+model.load_state_dict(torch.load("models/model_epoch" + str(START_EPOCH) + ".pth"))
 model = model.to(DEVICE)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -55,9 +48,9 @@ loss_fn = torch.nn.CrossEntropyLoss()
 iters = data.size(0) // BATCH_SIZE
 min_loss = float("inf")
 
-for epoch in range(EPOCHS):
+for epoch in range(START_EPOCH, EPOCHS):
     # adjust learning rate
-    lr = LEARNING_RATE * (0.1 ** (epoch // 30))
+    lr = LEARNING_RATE * (0.1 ** (epoch // 5))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 

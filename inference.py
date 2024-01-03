@@ -21,10 +21,7 @@ SEQ_LEN = 64
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-#model = MLP(vocab_size, EMBD_DIM, SEQ_LEN)
-#model = RNN(vocab_size, EMBD_DIM, SEQ_LEN)
 model = LSTM(vocab_size, EMBD_DIM, SEQ_LEN)
-#model.load_state_dict(torch.load("models/model_epoch1.pth"))
 if args.m is not None:
     model.load_state_dict(torch.load(args.m))
 model = model.to(DEVICE)
@@ -38,9 +35,14 @@ prompt = prompt.to(DEVICE)
 model.eval()
 with torch.no_grad():
     for i in range(MAX_NEW_TOKENS):
-        output = model(prompt)
+        logits = model(prompt)
 
-        new_token = torch.argmax(output, dim=-1)
+        # Sample token from top 5 most likely tokens
+        v, _ = torch.topk(logits, 5)
+        logits[logits < v[:, [-1]]] = -float("inf")
+        logits = torch.softmax(logits, dim=-1)
+        new_token = torch.multinomial(logits, num_samples=1)
+
         str_token = index_to_char[new_token.item()]
 
         prompt = prompt[:, 1:]
@@ -48,6 +50,5 @@ with torch.no_grad():
         prompt = torch.cat((prompt, new_token), dim=1)
 
         print(str_token, end="", flush=True)
-        time.sleep(0.01)
 
 print()
