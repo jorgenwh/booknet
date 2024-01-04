@@ -3,18 +3,106 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class Attention(nn.Module):
+    def __init__(self, d_model=512, seq_len=128, n_heads=8, device='cpu'):
+        super().__init__()
+        self.d_model = d_model
+        self.n_heads = n_heads
+
+        self.c_attn = nn.Linear(d_model, 3*d_model)
+        self.c_proj = nn.Linear(d_model, d_model)
+        self.mask = torch.tril(torch.ones(seq_len, seq_len)).view(1, 1, seq_len, seq_len).to(device)
+
+    def forward(self, x):
+        B, L, D = x.shape # (BATCH, SEQ_LEN, D_MODEL)
+
+        q, k, v = self.c_attn(x).split(self.d_model, dim=2)
+        q = k.reshape(B, L, self.n_heads, D // self.n_heads).transpose(1, 2)
+        k = k.reshape(B, L, self.n_heads, D // self.n_heads).transpose(1, 2)
+        v = k.reshape(B, L, self.n_heads, D // self.n_heads).transpose(1, 2)
+
+        att = torch.matmul(q, k.transpose(2, 3))
+        att = att / (k.shape[-1] ** 0.5)
+        att = att.masked_fill(self.mask[:, :, :L, :L] == 0, -1e9)
+        att = F.softmax(att, dim=3)
+        att = torch.matmul(att, v)
+
+        att = att.transpose(1, 2).reshape(B, L, D)
+
+        att = self.c_proj(att)
+        return att
+
+
+class FeedForward(nn.Module):
+    def __init__(self, d_model=512):
+        super().__init__()
+        self.fc1 = nn.Linear(d_model, 4*d_model)
+        self.fc2 = nn.Linear(4*d_model, d_model)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        return x
+
+
+class Block(nn.Module):
+    def __init__(self, d_model=512, seq_len=128, n_heads=8, device='cpu'):
+        super().__init__()
+        self.d_model = d_model
+
+        self.ln1 = nn.LayerNorm(d_model)
+        self.attn = Attention(d_model=d_model, seq_len=seq_len, n_heads=n_heads, device=device)
+        self.ln2 = nn.LayerNorm(d_model)
+        self.ff = FeedForward(d_model=d_model)
+
+    def forward(self, x):
+        x = x + self.attn(self.ln1(x))
+        x = x + self.ff(self.ln2(x))
+        return x
+
+
 class Transformer(nn.Module):
-    def __init__(self, vocab_size, seq_len=128, d_model=512):
+    def __init__(self, vocab_size, seq_len=128, d_model=512, n_heads=8, device='cpu'):
         super().__init__()
         self.vocab_size = vocab_size
         self.d_model = d_model
+        self.device = device
 
         self.input_embedding = nn.Embedding(vocab_size, d_model)
+        self.positional_encoding = nn.Embedding(seq_len, d_model)
 
-        self.positional_encoding = torch.zeros((seq_len, d_model), dtype=torch.float32)
-        for k in range(seq_len):
-            for j in range(d_model):
-                if j % 2 == 0:
-                    self.positional_encoding[k, j] = torch.sin(k/10000 ** (2*j / d_model))
-                else:
-                    self.positional_encoding[k, j] = torch.cos(k/10000 ** (2*j / d_model))
+        self.blocks = nn.ModuleList([
+            Block(d_model=d_model, seq_len=seq_len, n_heads=n_heads, device=device) for _ in range(6)
+        ])
+
+        self.ln = nn.LayerNorm(d_model)
+        self.fc = nn.Linear(d_model, vocab_size)
+
+    def forward(self, x):
+        B, L = x.shape
+
+        pos = torch.arange(0, L, dtype=torch.long, device=x.device).reshape(1, -1).to(self.device)
+        pos_emb = self.positional_encoding(pos)
+        tok_emb = self.input_embedding(x)
+
+        x = tok_emb + pos_emb
+
+        for block in self.blocks:
+            x = block(x)
+
+        x = self.ln(x)
+        x = self.fc(x)
+
+        x = x[:, -1, :]
+        return x
+
+
+if __name__ == '__main__':
+    BATCH_SIZE = 2
+    SEQ_LEN = 16
+    D_MODEL = 128
+    N_HEADS = 8
+    x = torch.randint(0, 65, size=(BATCH_SIZE, SEQ_LEN))
+    model = Transformer(vocab_size=65, seq_len=SEQ_LEN, d_model=D_MODEL, n_heads=N_HEADS)
+    model(x)

@@ -7,16 +7,21 @@ from transformer import Transformer
 from helpers import read_text, preprocess_text, AverageMeter
 
 
-data, vocab_size, char_to_index, index_to_char = preprocess_text(read_text("data/tinyshakespeare.txt"))
+text = "mental_health.csv"
+
+
+data, vocab_size, char_to_index, index_to_char = preprocess_text(read_text("data/" + text))
 assert data.dtype == torch.int64
 
 
-BATCH_SIZE = 8
+BATCH_SIZE = 128
 LEARNING_RATE = 0.001
 START_EPOCH = 0
 EPOCHS = 5
 EMBD_DIM = 32
-SEQ_LEN = 128
+SEQ_LEN = 256
+D_MODEL = 512
+N_HEADS = 6
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -34,20 +39,12 @@ def get_batch():
     return X, y
 
 
-model = LSTM(
-        vocab_size, 
-        EMBD_DIM, 
-        SEQ_LEN
-)
 model = Transformer(
-        src_vocab_size=vocab_size, 
-        tgt_vocab_size=vocab_size, 
-        max_len=SEQ_LEN, 
-        d_model=EMBD_DIM,
-        d_ff=EMBD_DIM*4,
-        n_heads=4,
-        n_layers=2,
-        dropout=0.1
+        vocab_size=vocab_size,
+        seq_len=SEQ_LEN,
+        d_model=D_MODEL,
+        n_heads=N_HEADS,
+        device=DEVICE
 )
 
 if START_EPOCH > 0:

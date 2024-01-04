@@ -5,6 +5,7 @@ import torch
 from mlp import MLP
 from rnn import RNN
 from lstm import LSTM
+from transformer import Transformer
 from helpers import read_text, preprocess_text, AverageMeter
 
 
@@ -21,7 +22,7 @@ SEQ_LEN = 64
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-model = LSTM(vocab_size, EMBD_DIM, SEQ_LEN)
+model = Transformer(vocab_size=vocab_size, seq_len=SEQ_LEN, d_model=256, n_heads=4, device=DEVICE)
 if args.m is not None:
     model.load_state_dict(torch.load(args.m))
 model = model.to(DEVICE)
