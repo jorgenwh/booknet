@@ -3,6 +3,7 @@ import torch
 from mlp import MLP
 from rnn import RNN
 from lstm import LSTM
+from transformer import Transformer
 from helpers import read_text, preprocess_text, AverageMeter
 
 
@@ -10,10 +11,10 @@ data, vocab_size, char_to_index, index_to_char = preprocess_text(read_text("data
 assert data.dtype == torch.int64
 
 
-BATCH_SIZE = 64
-LEARNING_RATE = 0.0001
-START_EPOCH = 9
-EPOCHS = 100
+BATCH_SIZE = 8
+LEARNING_RATE = 0.001
+START_EPOCH = 0
+EPOCHS = 5
 EMBD_DIM = 32
 SEQ_LEN = 128
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -38,8 +39,19 @@ model = LSTM(
         EMBD_DIM, 
         SEQ_LEN
 )
+model = Transformer(
+        src_vocab_size=vocab_size, 
+        tgt_vocab_size=vocab_size, 
+        max_len=SEQ_LEN, 
+        d_model=EMBD_DIM,
+        d_ff=EMBD_DIM*4,
+        n_heads=4,
+        n_layers=2,
+        dropout=0.1
+)
 
-model.load_state_dict(torch.load("models/model_epoch" + str(START_EPOCH) + ".pth"))
+if START_EPOCH > 0:
+    model.load_state_dict(torch.load("models/model_epoch" + str(START_EPOCH) + ".pth"))
 model = model.to(DEVICE)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
