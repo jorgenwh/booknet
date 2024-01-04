@@ -17,7 +17,7 @@ assert data.dtype == torch.int64
 BATCH_SIZE = 128
 LEARNING_RATE = 0.001
 START_EPOCH = 0
-EPOCHS = 5
+EPOCHS = 100
 EMBD_DIM = 32
 SEQ_LEN = 256
 D_MODEL = 512
@@ -54,7 +54,8 @@ model = model.to(DEVICE)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 loss_fn = torch.nn.CrossEntropyLoss()
 
-iters = data.size(0) // BATCH_SIZE
+iters = 10000
+#iters = data.size(0) // BATCH_SIZE
 min_loss = float("inf")
 
 for epoch in range(START_EPOCH, EPOCHS):
