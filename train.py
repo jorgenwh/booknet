@@ -1,10 +1,12 @@
+import time
 import torch
+from collections import deque
 
 from mlp import MLP
 from rnn import RNN
 from lstm import LSTM
 from transformer import Transformer
-from helpers import read_text, preprocess_text, AverageMeter
+from helpers import read_text, preprocess_text, get_time_stamp, AverageMeter
 
 
 text = "mental_health.csv"
@@ -54,8 +56,7 @@ model = model.to(DEVICE)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 loss_fn = torch.nn.CrossEntropyLoss()
 
-iters = 10000
-#iters = data.size(0) // BATCH_SIZE
+iters = 3000
 min_loss = float("inf")
 
 for epoch in range(START_EPOCH, EPOCHS):
@@ -67,10 +68,12 @@ for epoch in range(START_EPOCH, EPOCHS):
     print("Epoch: " + str(epoch+1) + "/" + str(EPOCHS))
 
     iloss = AverageMeter()
+    elapsed_s = 0
+    elapsed_s_last_100 = deque(maxlen=100)
 
     model.train()
-
     for i in range(iters):
+        t0 = time.time()
         X, y = get_batch()
         X = X.to(DEVICE)
         y = y.to(DEVICE)
@@ -87,14 +90,27 @@ for epoch in range(START_EPOCH, EPOCHS):
         loss.backward()
         optimizer.step()
 
+        elapsed_s += time.time() - t0
+        elapsed_s_last_100.append(time.time() - t0)
+        remaining_iters = iters - i - 1
+        s_per_iter_last_100 = sum(elapsed_s_last_100) / len(elapsed_s_last_100)
+        remaining_s = remaining_iters * s_per_iter_last_100
+        str_loss = str(iloss)
+        if len(str_loss.split(".")[1]) < 4:
+            str_loss += "0" * (4 - len(str_loss.split(".")[1]))
+
         print(
             "batch: " + str(i + 1) + "/" + str(iters) + " | " +
-            "loss: " + str(iloss) + " "*10, end="\r"
+            "loss: " + str_loss + " | " +
+            "elapsed: " + get_time_stamp(elapsed_s) + " | remaining: " + get_time_stamp(remaining_s) + 
+            " "*10, end="\r"
         )
 
+    remaining_s = 0
     print(
         "batch: " + str(iters) + "/" + str(iters) + " | " +
-        "loss: " + str(iloss) + " "*10
+        "loss: " + str_loss + " | " + 
+        "elapsed: " + get_time_stamp(elapsed_s) + " | remaining: " + get_time_stamp(remaining_s) + " "*10
     )
 
     if iloss.avg < min_loss:

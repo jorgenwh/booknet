@@ -3,6 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+from pytorch_model_summary import summary
+
+
 class Attention(nn.Module):
     def __init__(self, d_model=512, seq_len=128, n_heads=8, device='cpu'):
         super().__init__()
@@ -99,10 +102,11 @@ class Transformer(nn.Module):
 
 
 if __name__ == '__main__':
-    BATCH_SIZE = 2
-    SEQ_LEN = 16
-    D_MODEL = 128
-    N_HEADS = 8
-    x = torch.randint(0, 65, size=(BATCH_SIZE, SEQ_LEN))
-    model = Transformer(vocab_size=65, seq_len=SEQ_LEN, d_model=D_MODEL, n_heads=N_HEADS)
-    model(x)
+    BATCH_SIZE = 1
+    SEQ_LEN = 256
+    D_MODEL = 512
+    N_HEADS = 4
+    x = torch.randint(0, 111, size=(BATCH_SIZE, SEQ_LEN))
+    model = Transformer(vocab_size=111, seq_len=SEQ_LEN, d_model=D_MODEL, n_heads=N_HEADS)
+    #model(x)
+    print(summary(model, x))

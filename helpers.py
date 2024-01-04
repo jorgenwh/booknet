@@ -1,4 +1,5 @@
 import torch
+import datetime
 
 
 def read_text(filename):
@@ -12,6 +13,11 @@ def preprocess_text(text):
     index_to_char = {index: char for index, char in enumerate(vocab)}
     data = torch.tensor([char_to_index[char] for char in text])
     return data, vocab_size, char_to_index, index_to_char
+
+def get_time_stamp(s):
+    t_s = str(datetime.timedelta(seconds=round(s)))
+    ts = t_s.split(':')
+    return ts[0] + ':' + ts[1] + ':' + ts[2]
 
 
 class AverageMeter():
