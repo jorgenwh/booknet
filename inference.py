@@ -10,19 +10,24 @@ from helpers import read_text, preprocess_text, AverageMeter
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-t", type=int, help="Number of new tokens to generate", default=500)
+parser.add_argument("-t", type=int, help="Number of new tokens to generate", default=750)
 parser.add_argument("-m", type=str, help="Model name", default=None)
 args = parser.parse_args()
 
-data, vocab_size, char_to_index, index_to_char = preprocess_text(read_text("data/tinyshakespeare.txt"))
+text = "mental_health.csv"
+
+data, vocab_size, char_to_index, index_to_char = preprocess_text(read_text("data/" + text))
+
 
 MAX_NEW_TOKENS = args.t
 EMBD_DIM = 32
-SEQ_LEN = 64
+SEQ_LEN = 256
+D_MODEL = 512
+N_HEADS = 4
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-model = Transformer(vocab_size=vocab_size, seq_len=SEQ_LEN, d_model=256, n_heads=4, device=DEVICE)
+model = Transformer(vocab_size=vocab_size, seq_len=SEQ_LEN, d_model=D_MODEL, n_heads=N_HEADS, device=DEVICE)
 if args.m is not None:
     model.load_state_dict(torch.load(args.m))
 model = model.to(DEVICE)

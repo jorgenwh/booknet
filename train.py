@@ -21,7 +21,7 @@ EPOCHS = 5
 EMBD_DIM = 32
 SEQ_LEN = 256
 D_MODEL = 512
-N_HEADS = 6
+N_HEADS = 4
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
